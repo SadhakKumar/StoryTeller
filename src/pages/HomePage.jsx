@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from "react";
 import supabase from "../config/supabaseConfig";
+import { useNavigate } from "react-router-dom";
 
 // Components
 import Navbar from "../components/Navbar";
 import StoryCard from "../components/StoryCard";
+
+// Icons
+import { FaMagic } from "react-icons/fa";
 
 const HomePage = () => {
   const [session, setSession] = useState(null);
   const [stories, setStories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newStory, setNewStory] = useState("");
+  const [userId, setUserId] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch the session and set it to state
@@ -73,6 +80,8 @@ const HomePage = () => {
         console.error("Error fetching user ID:", idError);
         return;
       }
+
+      setUserId(id[0].id);
       // console.log("User ID fetched:", id);
       const { data: stories, error } = await supabase
         .from("Stories")
@@ -111,19 +120,19 @@ const HomePage = () => {
       return;
     }
 
-    const { data: id, error: idError } = await supabase
-      .from("Users")
-      .select("id")
-      .eq("email", session.user.email);
+    // const { data: id, error: idError } = await supabase
+    //   .from("Users")
+    //   .select("id")
+    //   .eq("email", session.user.email);
 
-    if (idError) {
-      console.error("Error fetching user ID:", idError);
-      return;
-    }
+    // if (idError) {
+    //   console.error("Error fetching user ID:", idError);
+    //   return;
+    // }
 
     const { data, error } = await supabase.from("Stories").insert([
       {
-        user_id: id[0].id,
+        user_id: userId,
         content: newStory,
       },
     ]);
@@ -176,6 +185,23 @@ const HomePage = () => {
               </div>
             )}
           </div>
+
+          {/* Floating Button */}
+          {stories.length > 0 && (
+            <button
+              onClick={() =>
+                navigate("/summarize", {
+                  state: {
+                    user: session.user.identities[0].identity_data,
+                    userId: userId,
+                  },
+                })
+              }
+              className="fixed bottom-8 right-8 bg-indigo-500 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-3xl font-bold hover:bg-indigo-600 transition duration-300 z-50"
+            >
+              <FaMagic size={24} />
+            </button>
+          )}
 
           {/* Add Story Modal */}
           {showModal && (
